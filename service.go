@@ -129,3 +129,25 @@ func (s *ServiceDiscovery) UnregisterAll() error {
 	}
 	return nil
 }
+
+type ServiceDiscoveryInstanceProvider struct {
+	name  string
+	disco *ServiceDiscovery
+	strat ProviderStrategy
+}
+
+func (s *ServiceDiscoveryInstanceProvider) GetAllInstances() ([]*ServiceInstance, error) {
+	return s.disco.Services[s.name], nil
+}
+
+func (s *ServiceDiscoveryInstanceProvider) GetInstance() (*ServiceInstance, error) {
+	return s.strat.GetInstance(s)
+}
+
+func (s *ServiceDiscovery) Provider(name string) ServiceProvider {
+	return s.ProviderWithStrategy(name, &RandomProvider{})
+}
+
+func (s *ServiceDiscovery) ProviderWithStrategy(name string, strat ProviderStrategy) ServiceProvider {
+	return &ServiceDiscoveryInstanceProvider{name, s, strat}
+}

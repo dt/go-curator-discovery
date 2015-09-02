@@ -134,6 +134,11 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatal("s2 != s3: ", s2, s3)
 	}
 
+	qux := s2.Provider("qux")
+	if q, _ := qux.GetInstance(); q != nil {
+		t.Fatal("should not find qux yet")
+	}
+
 	reg3 := NewSimpleServiceInstance("qux", "b", 8080)
 	if err := s1.Register(reg3); err != nil {
 		t.Fatal("error registering:", err)
@@ -150,6 +155,10 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatal("s2 missed pick up bad reg:", s2.Services)
 	} else if !reflect.DeepEqual(s2.Services, s3.Services) {
 		t.Fatal("s2 != s3: ", s2, s3)
+	}
+
+	if q, _ := qux.GetInstance(); q == nil {
+		t.Fatal("did not find qux")
 	}
 
 	s1.UnregisterAll()
