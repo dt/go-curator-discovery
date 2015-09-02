@@ -9,8 +9,13 @@ import (
 type ServiceDiscovery struct {
 	client curator.CuratorFramework
 
+	// Cache of watched services
+	Services map[string][]*ServiceInstance
+
 	// Maintained service registrations
 	maintain map[string]*ServiceInstance
+
+	tree *TreeCache
 
 	// path under which to read/create registrations (/base/servicename/instance-id)
 	basePath string
@@ -27,12 +32,22 @@ func NewServiceDiscovery(client curator.CuratorFramework, basePath string) *Serv
 	s.maintain = make(map[string]*ServiceInstance)
 	s.serializer = &JsonInstanceSerializer{}
 	s.connChanges = make(chan bool, 10)
+	s.Services = make(map[string][]*ServiceInstance)
 	return s
 }
 
 func (s *ServiceDiscovery) MaintainRegistrations() error {
 	go s.maintainConn()
 	s.client.ConnectionStateListenable().AddListener(s)
+	return nil
+}
+
+func (s *ServiceDiscovery) Watch() error {
+	if err := curator.NewEnsurePath(s.basePath).Ensure(s.client.ZookeeperClient()); err != nil {
+		return err
+	}
+	s.tree = NewTreeCache(s)
+	s.tree.Start()
 	return nil
 }
 
@@ -44,7 +59,7 @@ func (s *ServiceDiscovery) maintainConn() {
 	prev := false
 	for {
 		// wait for conn change
-		c, ok := <-s.connChanges
+		c, ok := getMostRecentBool(s.connChanges)
 		if !ok {
 			break
 		}
