@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"log"
+	"time"
 
 	"github.com/flier/curator.go"
 )
@@ -23,6 +24,13 @@ type ServiceDiscovery struct {
 	serializer InstanceSerializer
 
 	connChanges chan bool
+}
+
+func NewServiceDiscoveryAndConn(connString, basePath string) (*ServiceDiscovery, curator.CuratorFramework) {
+	retryPolicy := curator.NewExponentialBackoffRetry(time.Second, 3, 15*time.Second)
+	client := curator.NewClient(connString, retryPolicy)
+	client.Start()
+	return NewServiceDiscovery(client, basePath), client
 }
 
 func NewServiceDiscovery(client curator.CuratorFramework, basePath string) *ServiceDiscovery {
