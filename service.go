@@ -155,7 +155,7 @@ func (s *ServiceDiscoveryInstanceProvider) GetInstance() (*ServiceInstance, erro
 }
 
 func (s *ServiceDiscovery) Provider(name string) ServiceProvider {
-	return s.ProviderWithStrategy(name, &RandomProvider{})
+	return s.ProviderWithStrategy(name, NewRandomProvider())
 }
 
 func (s *ServiceDiscovery) ProviderWithStrategy(name string, strat ProviderStrategy) ServiceProvider {

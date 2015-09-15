@@ -3,6 +3,7 @@ package discovery
 import (
 	"math/rand"
 	"sync/atomic"
+	"time"
 )
 
 type InstanceProvider interface {
@@ -27,7 +28,13 @@ type ServiceProvider interface {
 	GetInstance() (*ServiceInstance, error)
 }
 
-type RandomProvider struct{}
+type RandomProvider struct {
+	*rand.Rand
+}
+
+func NewRandomProvider() *RandomProvider {
+	return &RandomProvider{rand.New(rand.NewSource(time.Now().UnixNano()))}
+}
 
 // Ensure RandomProvider implements ProviderStrategy
 var _ ProviderStrategy = (*RandomProvider)(nil)
@@ -41,7 +48,7 @@ func (r RandomProvider) GetInstance(ip InstanceProvider) (*ServiceInstance, erro
 		return nil, nil
 	}
 
-	return instances[rand.Intn(len(instances))], nil
+	return instances[r.Intn(len(instances))], nil
 }
 
 type RoundRobinProvider struct {
