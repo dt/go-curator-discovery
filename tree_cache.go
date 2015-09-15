@@ -22,10 +22,8 @@ func NewTreeCache(s *ServiceDiscovery) *TreeCache {
 }
 
 func (t *TreeCache) Start() {
-	go t.processServiceChanges()
+	t.processServiceChanges()
 	go t.processInstanceChanges()
-
-	t.serviceListChanges <- true
 }
 
 func (t *TreeCache) processInstanceChanges() {
@@ -90,32 +88,39 @@ func (t *TreeCache) readInstanceList(s string, children []string) {
 func (t *TreeCache) processServiceChanges() {
 	watching := make(map[string]bool)
 
-	for {
-		_, cont := getMostRecentBool(t.serviceListChanges)
-		if !cont {
-			break
-		}
-
-		w := curator.NewWatcher(func(*zk.Event) { t.serviceListChanges <- true })
-
-		children, err := t.client.GetChildren().UsingWatcher(w).ForPath(t.basePath)
-		if err != nil {
-			log.Println("Error reading service list: ", err)
-			continue
-		}
-		found := make(map[string]bool)
-		for _, i := range children {
-			found[i] = true
-			if !watching[i] {
-				t.readAndWatch(i, "starting")
-				watching[i] = true
+	go func() {
+		for {
+			_, cont := getMostRecentBool(t.serviceListChanges)
+			if !cont {
+				break
 			}
+
+			t.readServices(watching)
 		}
-		for i, _ := range t.Services {
-			if !found[i] {
-				delete(t.Services, i)
-			}
+		log.Println("Done watching for service changes")
+	}()
+	t.readServices(watching)
+}
+
+func (t *TreeCache) readServices(watching map[string]bool) {
+	w := curator.NewWatcher(func(*zk.Event) { t.serviceListChanges <- true })
+
+	children, err := t.client.GetChildren().UsingWatcher(w).ForPath(t.basePath)
+	if err != nil {
+		log.Println("Error reading service list: ", err)
+		return
+	}
+	found := make(map[string]bool)
+	for _, i := range children {
+		found[i] = true
+		if !watching[i] {
+			t.readAndWatch(i, "starting")
+			watching[i] = true
 		}
 	}
-	log.Println("Done watching for service changes")
+	for i, _ := range t.Services {
+		if !found[i] {
+			delete(t.Services, i)
+		}
+	}
 }
