@@ -77,7 +77,7 @@ func (t *TreeCache) readInstanceList(s string, children []string) {
 		}
 		i.Id = id // Just in case, since we treat use path for caching.
 
-		log.Printf("New instance for %s: %s (%s)\n", s, i.Spec(), id)
+		log.Printf("New instance for %s in %s (%s)\n", s, i.Spec(), id)
 		existing[id] = i
 		instances = append(instances, i)
 	}
