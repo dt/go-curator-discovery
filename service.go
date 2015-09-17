@@ -26,16 +26,28 @@ type ServiceDiscovery struct {
 	connChanges chan bool
 }
 
-func NewServiceDiscoveryAndConn(connString, basePath string) (*ServiceDiscovery, curator.CuratorFramework, error) {
+type Conn interface {
+	curator.CuratorFramework
+}
+
+func DefaultConn(conn string) (Conn, error) {
 	retryPolicy := curator.NewExponentialBackoffRetry(time.Second, 3, 15*time.Second)
-	client := curator.NewClient(connString, retryPolicy)
+	client := curator.NewClient(conn, retryPolicy)
 	if err := client.Start(); err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func NewServiceDiscoveryAndConn(connString, basePath string) (*ServiceDiscovery, Conn, error) {
+	client, err := DefaultConn(connString)
+	if err != nil {
 		return nil, nil, err
 	}
 	return NewServiceDiscovery(client, basePath), client, nil
 }
 
-func NewServiceDiscovery(client curator.CuratorFramework, basePath string) *ServiceDiscovery {
+func NewServiceDiscovery(client Conn, basePath string) *ServiceDiscovery {
 	s := new(ServiceDiscovery)
 	s.client = client
 	s.basePath = basePath
