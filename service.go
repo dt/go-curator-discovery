@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/flier/curator.go"
+	"github.com/dt/curator.go"
 )
 
 type ServiceDiscovery struct {

@@ -3,7 +3,7 @@ package discovery
 import (
 	"log"
 
-	"github.com/flier/curator.go"
+	"github.com/dt/curator.go"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
