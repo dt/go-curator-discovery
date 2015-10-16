@@ -1,3 +1,5 @@
+# MOVED TO [fsgo](http://github.com/foursquare/fsgo/tree/master/net/discovery)
+
 # Curator Service Discovery (for Go)
 Implement Curator-sytle service discovery in Go -- both server-side registration as well as client-side discovery.
 
